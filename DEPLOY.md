@@ -26,6 +26,15 @@
 
 `.env` **不会**被 CI 覆盖；只在服务器上维护。
 
+## HTTPS 证书续期
+
+Let's Encrypt 证书由 `certbot.timer` 自动续期。nginx 的 80 端口只放行
+`/.well-known/acme-challenge/`，其余跳转到 HTTPS。续期自检：
+
+```bash
+sudo certbot renew --dry-run
+```
+
 ## 常用命令
 
 ```bash
