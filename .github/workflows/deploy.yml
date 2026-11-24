@@ -1,8 +1,8 @@
 name: Deploy
 
+# 默认不随 push 自动部署：Lightsail 22 端口有 IP 白名单时，
+# GitHub Actions 连不上 SSH。需要自动部署时，先放开 22，再在 Actions 里手动 Run workflow。
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +27,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 多行密钥必须走 env，不能直接插进 run 脚本里
       - name: Prepare SSH key
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -68,7 +67,6 @@ jobs:
             echo "缺少 /opt/reply-stats/.env，请先在服务器上手动创建并填写凭证"
             exit 1
           fi
-          # 若仓库里的 nginx 配置有更新，同步到站点配置（只动本域名）
           if [[ -f deploy/reply-stats.nginx.conf ]]; then
             sudo cp deploy/reply-stats.nginx.conf /etc/nginx/sites-available/reply-stats
             sudo nginx -t

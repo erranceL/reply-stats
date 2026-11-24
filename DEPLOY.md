@@ -26,8 +26,14 @@
 
 `.env` **不会**被 CI 覆盖；只在服务器上维护。
 
-推送到 `main` 会跑测试；**自动部署还要求 Lightsail 的 22 端口允许 GitHub Actions 访问**。
-若 22 只对办公室 IP 放行，Actions 里的 Deploy 会失败，需要从已放行的机器手动同步，或把 22 对公网开放。
+推送到 `main` 只跑 **CI 测试**。Deploy 改为在 GitHub Actions 里手动 Run workflow，
+并且要求 Lightsail **22 端口对 GitHub Actions 可达**（当前若仅办公室 IP 白名单，会连不上）。
+
+从已放行的机器部署：
+
+```bash
+./scripts/deploy-local.sh
+```
 
 ## HTTPS 证书续期
 
