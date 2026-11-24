@@ -74,11 +74,13 @@ const CHINESE = [
     list('了|好了|完了|过了|上了'),
   ),
   ...list('完成|搞定|好了|可以了|发你了|发给你了|发过去了|发你邮箱了|发邮箱了|发群里了|确认无误|确认没问题'),
-  // 稍等、在处理
+  // 稍等、在处理、快了/马上就好（应答式；单独「马上处理」因「处理」不在词库，仍不算收尾）
   ...list(`
-    在|在的|我在|稍等|稍等下|稍等一下|等下|等一下|等等|等会|等会儿|等我下|等我一下|马上|马上来|马上好|来了|这就来
+    在|在的|我在|稍等|稍等下|稍等一下|等下|等一下|等等|等会|等会儿|等我下|等我一下|马上|马上来|马上好|马上好了|来了|这就来
     稍后回复|稍后回复你|稍后回你|晚点回你|晚点回复你|回头回你|一会回你|等下回你|等会回你
     在看了|在处理|在处理了|处理中|正在处理|正在看|在弄了|在搞了|在改了|在查了|在跟了|跟进中|安排中
+    快了|就快了|快好了|快好|很快|很快好|很快就好|差不多|差不多了|就好|就好了|马上就好|一会就好|等下就好|这就好|这就好了
+    马上完|马上完了|快完了|马上搞定|很快搞定|一会就好了|等下就好了|马上回|马上回你|这就回|这就回你
   `),
   // “我下午看一下”“我马上处理”：必须带“我”，不带主语的“马上处理”可能是在下指令
   ...combine(
@@ -114,6 +116,7 @@ const ENGLISH = list(`
   got it|got you|gotcha|understood|i see|i understand|makes sense|make sense|fair enough
   noted|well noted|duly noted|noted with thanks|roger|roger that|copy|copy that|ack|acknowledged|received|well received
   will do|on it|done|fixed|resolved|merged|approved|shipped|sent|updated|deployed
+  soon|almost|almost done|coming|coming soon|one sec|one second|one moment|sec|brb|omw|on my way|be right back
   thanks|thank you|thank u|thanks a lot|thanks so much|thank you so much|thank you very much|thanks very much|many thanks
   thanks all|thanks everyone|thanks team|thanks guys|thanks again|thanks for the help|thanks for your help|thank you for your help
   much appreciated|appreciate it|appreciated|thx|tks|ty|tysm|tyvm|thnx|thanx|cheers
