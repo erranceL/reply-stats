@@ -26,6 +26,9 @@
 
 `.env` **不会**被 CI 覆盖；只在服务器上维护。
 
+推送到 `main` 会跑测试；**自动部署还要求 Lightsail 的 22 端口允许 GitHub Actions 访问**。
+若 22 只对办公室 IP 放行，Actions 里的 Deploy 会失败，需要从已放行的机器手动同步，或把 22 对公网开放。
+
 ## HTTPS 证书续期
 
 Let's Encrypt 证书由 `certbot.timer` 自动续期。nginx 的 80 端口只放行
