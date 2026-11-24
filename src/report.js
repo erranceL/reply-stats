@@ -58,9 +58,20 @@ export function makePeriod(name, from, to) {
 }
 
 /** 按被 @ / 被私聊的人汇总。超时 = 有效时长超过阈值（已回复的看回复用时，未回复的看到现在为止）。 */
-export function computeStats({ store, clock, teamId, from, to, now, thresholdSeconds, targetUser }) {
+export function computeStats({
+  store,
+  clock,
+  teamId,
+  from,
+  to,
+  now,
+  thresholdSeconds,
+  targetUser,
+  excludeUsers,
+}) {
   const byUser = new Map();
   for (const item of store.listItems({ teamId, from, to, targetUser })) {
+    if (excludeUsers?.has(item.target_user)) continue;
     let stat = byUser.get(item.target_user);
     if (!stat) {
       stat = { userId: item.target_user, total: 0, overdue: 0, unanswered: 0, replyTimes: [], overdueItems: [] };

@@ -104,6 +104,9 @@ export function loadConfig(env = process.env) {
     },
 
     adminUsers: new Set(parseIds(env.ADMIN_USERS, 'ADMIN_USERS', userId)),
+    // 不纳入统计的账号：邮箱（需 users:read.email）或直接写成员 ID
+    excludeEmails: parseList(env.EXCLUDE_EMAILS || 'tony@tf.xyz,wangdana@tf.xyz').map((e) => e.toLowerCase()),
+    excludeUsers: new Set(parseIds(env.EXCLUDE_USERS, 'EXCLUDE_USERS', userId)),
     reportChannel,
     reportWeekday,
     reportTime: parseTime(env.REPORT_TIME || '09:30', 'REPORT_TIME'),

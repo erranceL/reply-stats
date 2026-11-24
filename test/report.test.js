@@ -46,6 +46,12 @@ function stats(ctx, extra = {}) {
   });
 }
 
+test('computeStats 会跳过排除名单里的成员', () => {
+  const ranked = stats(seed(), { excludeUsers: new Set(['UB', 'UC']) });
+  assert.ok(!ranked.some((s) => s.userId === 'UB' || s.userId === 'UC'));
+  assert.ok(ranked.some((s) => s.userId === 'UA' || s.userId === 'UD'));
+});
+
 test('computeStats 统计超时次数、未回复数和回复时长', () => {
   const byUser = Object.fromEntries(stats(seed()).map((s) => [s.userId, s]));
 

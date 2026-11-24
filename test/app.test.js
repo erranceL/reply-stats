@@ -329,6 +329,7 @@ test('OAuth：安装链接带齐权限，成员授权后保存加密的 token', 
   assert.equal(installUrl.searchParams.get('client_id'), 'client-id');
   assert.match(installUrl.searchParams.get('scope'), /channels:history/);
   assert.match(installUrl.searchParams.get('scope'), /reactions:read/);
+  assert.match(installUrl.searchParams.get('scope'), /users:read\.email/);
   assert.equal(installUrl.searchParams.get('user_scope'), 'im:history,im:read,reactions:read');
   assert.equal(installUrl.searchParams.get('team'), null);
   assert.equal(installUrl.searchParams.get('redirect_uri'), 'https://stats.example.com/slack/oauth_redirect');

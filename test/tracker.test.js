@@ -99,6 +99,22 @@ test('私聊：对方第一条未回复消息开始计时，回复后结案', ()
   assert.equal(items[1].reply_at, null);
 });
 
+test('trackOther=false 时只结案、不为对方开新记录', () => {
+  const { store, tracker } = setup();
+  assert.deepEqual(
+    tracker.onDmMessage({
+      teamId: TEAM,
+      channel: 'D9',
+      ts: ts('2026-11-16 14:00'),
+      user: 'UA',
+      otherUser: 'UB',
+      trackOther: false,
+    }),
+    { resolved: 0, created: 0 },
+  );
+  assert.equal(all(store).length, 0);
+});
+
 test('收尾语能结掉自己欠的回复，但不会给对方开新记录', () => {
   const { store, tracker } = setup();
   // 频道

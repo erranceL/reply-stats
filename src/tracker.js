@@ -69,11 +69,16 @@ export function createTracker({ store, clock }) {
     return { resolved, created };
   }
 
-  function onDmMessage({ teamId, channel, ts, user, otherUser, closing = false }) {
+  function onDmMessage({ teamId, channel, ts, user, otherUser, closing = false, trackOther = true }) {
     const resolved = resolve(store.openItems(teamId, channel, user), ts);
 
     let created = 0;
-    if (!closing && otherUser !== user && store.openItems(teamId, channel, otherUser).length === 0) {
+    if (
+      trackOther &&
+      !closing &&
+      otherUser !== user &&
+      store.openItems(teamId, channel, otherUser).length === 0
+    ) {
       const inserted = store.insertItem({
         teamId,
         kind: 'dm',

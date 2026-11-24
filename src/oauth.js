@@ -6,6 +6,7 @@ export const BOT_SCOPES = [
   'channels:read',
   'channels:join',
   'users:read',
+  'users:read.email',
   'reactions:read',
   'commands',
   'chat:write',

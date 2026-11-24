@@ -14,11 +14,13 @@ test('节假日和补班日：格式正确时解析，写错时启动报错', ()
   assert.throws(() => testConfig({ EXTRA_WORKDAYS: '2026-02-30' }), /EXTRA_WORKDAYS.*2026-02-30/);
 });
 
-test('REPORT_CHANNEL、SLACK_TEAM_ID、CLOSING_PHRASES 的解析和校验', () => {
+test('REPORT_CHANNEL、SLACK_TEAM_ID、CLOSING_PHRASES、EXCLUDE_EMAILS 的解析和校验', () => {
   const defaults = testConfig();
   assert.equal(defaults.reportChannel, '');
   assert.equal(defaults.teamId, '');
   assert.deepEqual(defaults.closingPhrases, []);
+  assert.deepEqual(defaults.excludeEmails, ['tony@tf.xyz', 'wangdana@tf.xyz']);
+  assert.equal(defaults.excludeUsers.size, 0);
 
   const config = testConfig({ REPORT_CHANNEL: ' C012ABC ', SLACK_TEAM_ID: 'T012ABC', CLOSING_PHRASES: '阔以, 莫得问题' });
   assert.equal(config.reportChannel, 'C012ABC');

@@ -43,6 +43,32 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
   const botToken = (teamId) => store.getTeam(teamId)?.botToken;
   const isClosing = createClosingMatcher(config.closingPhrases);
 
+  // 排除账号：配置的成员 ID + 按邮箱查到的成员 ID
+  const excludedIds = new Set(config.excludeUsers);
+  const emailLookup = new Map(); // email -> userId | null（null 表示查过但没有）
+  async function refreshExcluded(teamId) {
+    const token = botToken(teamId);
+    if (!token || !config.excludeEmails.length) return excludedIds;
+    for (const email of config.excludeEmails) {
+      if (emailLookup.has(email)) continue;
+      try {
+        const { user } = await client.users.lookupByEmail({ token, email });
+        emailLookup.set(email, user.id);
+        excludedIds.add(user.id);
+        logger.info(`已排除统计账号 ${email}（${user.id}）`);
+      } catch (err) {
+        emailLookup.set(email, null);
+        logger.warn(`无法按邮箱排除 ${email}：${err.data?.error ?? err.message}`);
+      }
+    }
+    return excludedIds;
+  }
+  async function isExcluded(teamId, userId) {
+    if (excludedIds.has(userId)) return true;
+    await refreshExcluded(teamId);
+    return excludedIds.has(userId);
+  }
+
   // 同一个会话里的事件按到达顺序逐个处理完，避免“回复”抢在“被 @”之前处理而漏记。
   const queues = new Map();
   function inOrder(teamId, channel, task) {
@@ -141,6 +167,7 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
         user: event.user,
         otherUser: other,
         closing,
+        trackOther: !(await isExcluded(teamId, other)),
       });
       return;
     }
@@ -148,7 +175,10 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
     if (event.channel_type === 'channel' || event.channel_type === 'group') {
       const mentions = [];
       for (const id of extractMentions(event.text)) {
-        if (id !== event.user && !(await getUser(teamId, id)).isBot) mentions.push(id);
+        if (id === event.user) continue;
+        if ((await getUser(teamId, id)).isBot) continue;
+        if (await isExcluded(teamId, id)) continue;
+        mentions.push(id);
       }
       tracker.onChannelMessage({
         teamId,
@@ -225,6 +255,7 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
   // ---- 报表 ----
 
   async function buildRanking(teamId, period) {
+    const excludeUsers = await refreshExcluded(teamId);
     const stats = computeStats({
       store,
       clock,
@@ -233,6 +264,7 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
       to: period.to,
       now: nowSec(),
       thresholdSeconds: config.thresholdSeconds,
+      excludeUsers,
     });
     const names = await resolveNames(teamId, stats.map((s) => s.userId));
     return formatRanking({
@@ -245,6 +277,7 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
   }
 
   async function buildUserDetail(teamId, userId, period) {
+    const excludeUsers = await refreshExcluded(teamId);
     const stats = computeStats({
       store,
       clock,
@@ -254,6 +287,7 @@ export function createSlackApp({ config, store, tracker, clock, cipher, logLevel
       now: nowSec(),
       thresholdSeconds: config.thresholdSeconds,
       targetUser: userId,
+      excludeUsers,
     });
     const names = await resolveNames(teamId, [userId, ...userIdsIn(stats)]);
     return formatUserDetail({
