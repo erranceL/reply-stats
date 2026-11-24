@@ -1,0 +1,20 @@
+{
+  "name": "slack-reply-stats",
+  "version": "0.1.0",
+  "private": true,
+  "description": "统计 Slack 中被 @ 或私聊后超过 30 分钟未回复的次数与最终回复时长",
+  "type": "module",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@slack/bolt": "^5.1.0",
+    "better-sqlite3": "^13.2.0",
+    "luxon": "^3.7.2"
+  }
+}

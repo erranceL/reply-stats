@@ -1,0 +1,48 @@
+# Slack 应用清单。在 https://api.slack.com/apps 选择 “Create New App → From a manifest” 后粘贴本文件。
+# 当前域名：https://reply-stats.tfoffices.com（与 .env 的 PUBLIC_URL 保持一致）
+display_information:
+  name: 回复速率统计
+  description: 统计被 @ 或私聊后超过 30 分钟未回复的次数和回复时长
+features:
+  bot_user:
+    display_name: reply-stats
+    always_online: true
+  slash_commands:
+    - command: /reply-stats
+      url: https://reply-stats.tfoffices.com/slack/commands
+      description: 查看回复速率统计
+      usage_hint: "[week | last-week | month | 7d] [@成员]"
+      should_escape: true
+oauth_config:
+  redirect_urls:
+    - https://reply-stats.tfoffices.com/slack/oauth_redirect
+  scopes:
+    bot:
+      - channels:history
+      - groups:history
+      - channels:read
+      - channels:join
+      - users:read
+      - reactions:read
+      - commands
+      - chat:write
+    user:
+      - im:history
+      - im:read
+      - reactions:read
+settings:
+  event_subscriptions:
+    request_url: https://reply-stats.tfoffices.com/slack/events
+    bot_events:
+      - message.channels
+      - message.groups
+      - reaction_added
+      - channel_created
+      - app_uninstalled
+      - tokens_revoked
+    user_events:
+      - message.im
+      - reaction_added
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false

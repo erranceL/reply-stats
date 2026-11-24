@@ -1,0 +1,113 @@
+import { DateTime, IANAZone } from 'luxon';
+
+function parseTime(value, name) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!m || Number(m[1]) > 23 || Number(m[2]) > 59) {
+    throw new Error(`${name} 格式应为 HH:MM，当前值：${value}`);
+  }
+  return { hour: Number(m[1]), minute: Number(m[2]) };
+}
+
+function parseList(value) {
+  return (value ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function parseDates(value, name) {
+  const dates = parseList(value);
+  const bad = dates.filter((d) => !/^\d{4}-\d{2}-\d{2}$/.test(d) || !DateTime.fromISO(d).isValid);
+  if (bad.length) throw new Error(`${name} 里的日期应为 YYYY-MM-DD，无法识别：${bad.join(', ')}`);
+  return new Set(dates);
+}
+
+function parseIds(value, name, pattern) {
+  const ids = parseList(value);
+  const bad = ids.filter((id) => !pattern.test(id));
+  if (bad.length) throw new Error(`${name} 里有无法识别的 ID：${bad.join(', ')}`);
+  return ids;
+}
+
+function parseBool(value, fallback) {
+  if (value === undefined || value === '') return fallback;
+  return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
+}
+
+export function loadConfig(env = process.env) {
+  const missing = [
+    'SLACK_CLIENT_ID',
+    'SLACK_CLIENT_SECRET',
+    'SLACK_SIGNING_SECRET',
+    'PUBLIC_URL',
+    'TOKEN_ENCRYPTION_KEY',
+  ].filter((k) => !env[k]);
+  if (missing.length) {
+    throw new Error(`缺少必填环境变量：${missing.join(', ')}（参考 .env.example）`);
+  }
+  if (!/^[0-9a-fA-F]{64}$/.test(env.TOKEN_ENCRYPTION_KEY)) {
+    throw new Error('TOKEN_ENCRYPTION_KEY 必须是 64 位十六进制字符串，可用 `openssl rand -hex 32` 生成');
+  }
+
+  const timezone = env.TIMEZONE || 'Asia/Shanghai';
+  if (!IANAZone.isValidZone(timezone)) {
+    throw new Error(`TIMEZONE 不是有效的时区：${timezone}`);
+  }
+
+  const thresholdMinutes = Number(env.THRESHOLD_MINUTES || 30);
+  if (!(thresholdMinutes > 0)) throw new Error('THRESHOLD_MINUTES 必须大于 0');
+
+  const workDays = parseList(env.WORK_DAYS || '1,2,3,4,5').map(Number);
+  if (workDays.some((d) => !Number.isInteger(d) || d < 1 || d > 7)) {
+    throw new Error('WORK_DAYS 应为 1-7 的数字（1=周一，7=周日），用逗号分隔');
+  }
+
+  const workStart = parseTime(env.WORK_START || '09:00', 'WORK_START');
+  const workEnd = parseTime(env.WORK_END || '18:00', 'WORK_END');
+  if (workEnd.hour * 60 + workEnd.minute <= workStart.hour * 60 + workStart.minute) {
+    throw new Error('WORK_END 必须晚于 WORK_START');
+  }
+
+  const reportWeekday = Number(env.REPORT_WEEKDAY || 1);
+  if (!Number.isInteger(reportWeekday) || reportWeekday < 1 || reportWeekday > 7) {
+    throw new Error('REPORT_WEEKDAY 应为 1-7（1=周一，7=周日）');
+  }
+
+  const userId = /^[UW][A-Z0-9]+$/;
+  const [teamId = ''] = parseIds(env.SLACK_TEAM_ID, 'SLACK_TEAM_ID', /^T[A-Z0-9]+$/);
+
+  const reportChannel = (env.REPORT_CHANNEL ?? '').trim();
+  if (reportChannel && !/^[CG][A-Z0-9]+$/.test(reportChannel)) {
+    throw new Error(`REPORT_CHANNEL 应为频道 ID（C 开头的一串字符，不是频道名），当前值：${reportChannel}`);
+  }
+
+  return {
+    port: Number(env.PORT || 3000),
+    publicUrl: env.PUBLIC_URL.replace(/\/+$/, ''),
+    clientId: env.SLACK_CLIENT_ID,
+    clientSecret: env.SLACK_CLIENT_SECRET,
+    signingSecret: env.SLACK_SIGNING_SECRET,
+    tokenKey: env.TOKEN_ENCRYPTION_KEY,
+    teamId,
+    dbPath: env.DB_PATH || './data/reply-stats.db',
+
+    thresholdSeconds: thresholdMinutes * 60,
+    closingPhrases: parseList(env.CLOSING_PHRASES),
+    work: {
+      enabled: parseBool(env.WORK_HOURS_ONLY, true),
+      timezone,
+      start: workStart,
+      end: workEnd,
+      days: new Set(workDays),
+      holidays: parseDates(env.HOLIDAYS, 'HOLIDAYS'),
+      extraWorkdays: parseDates(env.EXTRA_WORKDAYS, 'EXTRA_WORKDAYS'),
+    },
+
+    adminUsers: new Set(parseIds(env.ADMIN_USERS, 'ADMIN_USERS', userId)),
+    reportChannel,
+    reportWeekday,
+    reportTime: parseTime(env.REPORT_TIME || '09:30', 'REPORT_TIME'),
+    autoJoinPublicChannels: parseBool(env.AUTO_JOIN_PUBLIC_CHANNELS, false),
+    command: env.SLASH_COMMAND || '/reply-stats',
+  };
+}

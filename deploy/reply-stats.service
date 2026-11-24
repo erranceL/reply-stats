@@ -1,0 +1,19 @@
+[Unit]
+Description=Slack reply-stats
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/reply-stats
+Environment=NODE_ENV=production
+EnvironmentFile=/opt/reply-stats/.env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+# Slack 推送失败时由 Slack 重试；本地不要无限重启刷爆日志
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Install]
+WantedBy=multi-user.target
