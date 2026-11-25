@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { extractMentions } from '../src/tracker.js';
-import { TEAM, at, setup, ts } from './helpers.js';
+import { TEAM, at, setupFullDay as setup, ts } from './helpers.js';
 
 const all = (store) => store.listItems({ teamId: TEAM, from: 0, to: 1e12 });
 

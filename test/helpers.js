@@ -32,3 +32,8 @@ export function setup(overrides) {
   const tracker = createTracker({ store, clock });
   return { config, cipher, store, clock, tracker };
 }
+
+/** 用全天单段工时，方便断言「墙上时钟分钟数 = 有效时长」的用例 */
+export function setupFullDay(overrides) {
+  return setup({ WORK_HOURS: '', WORK_START: '09:00', WORK_END: '18:00', ...overrides });
+}

@@ -62,10 +62,35 @@ export function loadConfig(env = process.env) {
     throw new Error('WORK_DAYS 应为 1-7 的数字（1=周一，7=周日），用逗号分隔');
   }
 
-  const workStart = parseTime(env.WORK_START || '09:00', 'WORK_START');
-  const workEnd = parseTime(env.WORK_END || '18:00', 'WORK_END');
-  if (workEnd.hour * 60 + workEnd.minute <= workStart.hour * 60 + workStart.minute) {
-    throw new Error('WORK_END 必须晚于 WORK_START');
+  // 优先用 WORK_HOURS（可多段，如 10:30-12:00,14:00-17:30）；否则退回 WORK_START/WORK_END 单段
+  const toMinutes = (t) => t.hour * 60 + t.minute;
+  let windows;
+  if (env.WORK_HOURS?.trim()) {
+    windows = env.WORK_HOURS.split(',').map((part, i) => {
+      const m = /^(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})$/.exec(part.trim());
+      if (!m) throw new Error(`WORK_HOURS 第 ${i + 1} 段格式应为 HH:MM-HH:MM，当前：${part}`);
+      const start = parseTime(m[1], `WORK_HOURS[${i}].start`);
+      const end = parseTime(m[2], `WORK_HOURS[${i}].end`);
+      if (toMinutes(end) <= toMinutes(start)) {
+        throw new Error(`WORK_HOURS 第 ${i + 1} 段的结束时间必须晚于开始时间：${part}`);
+      }
+      return { start, end };
+    });
+  } else if (env.WORK_START || env.WORK_END) {
+    const start = parseTime(env.WORK_START || '09:00', 'WORK_START');
+    const end = parseTime(env.WORK_END || '18:00', 'WORK_END');
+    if (toMinutes(end) <= toMinutes(start)) throw new Error('WORK_END 必须晚于 WORK_START');
+    windows = [{ start, end }];
+  } else {
+    windows = [
+      { start: parseTime('10:30', 'default'), end: parseTime('12:00', 'default') },
+      { start: parseTime('14:00', 'default'), end: parseTime('17:30', 'default') },
+    ];
+  }
+  for (let i = 1; i < windows.length; i += 1) {
+    if (toMinutes(windows[i].start) < toMinutes(windows[i - 1].end)) {
+      throw new Error('WORK_HOURS 各时段不能重叠，且需按时间先后排列');
+    }
   }
 
   const reportWeekday = Number(env.REPORT_WEEKDAY || 1);
@@ -96,8 +121,10 @@ export function loadConfig(env = process.env) {
     work: {
       enabled: parseBool(env.WORK_HOURS_ONLY, true),
       timezone,
-      start: workStart,
-      end: workEnd,
+      windows,
+      // 兼容旧字段：取第一段开始、最后一段结束（报表展示用 windows）
+      start: windows[0].start,
+      end: windows[windows.length - 1].end,
       days: new Set(workDays),
       holidays: parseDates(env.HOLIDAYS, 'HOLIDAYS'),
       extraWorkdays: parseDates(env.EXTRA_WORKDAYS, 'EXTRA_WORKDAYS'),

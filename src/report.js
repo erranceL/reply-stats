@@ -115,7 +115,8 @@ export function describeRules(config) {
   const days = [...config.work.days].sort((a, b) => a - b);
   const dayText =
     days.join(',') === '1,2,3,4,5' ? '周一至周五' : days.map((d) => DAY_NAMES[d]).join('、');
-  return `${threshold}，时长只计工作时间（${dayText} ${hhmm(config.work.start)}–${hhmm(config.work.end)}）。`;
+  const hours = config.work.windows.map((w) => `${hhmm(w.start)}–${hhmm(w.end)}`).join('、');
+  return `${threshold}，时长只计工作时间（${dayText} ${hours}）。`;
 }
 
 function summaryLine(stat, name) {

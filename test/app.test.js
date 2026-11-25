@@ -5,7 +5,7 @@ import { after, before, test } from 'node:test';
 import bolt from '@slack/bolt';
 import { createSlackApp } from '../src/app.js';
 import { parsePeriod } from '../src/report.js';
-import { TEAM, setup, ts } from './helpers.js';
+import { TEAM, setupFullDay as setup, ts } from './helpers.js';
 
 // 端到端：真实的 Bolt 接收器 + 签名校验，Slack API 调用用假实现替换。
 
